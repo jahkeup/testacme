@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/letsencrypt/pebble/v2/ca"
@@ -93,6 +94,13 @@ func newPebbleConfig(t testingT) (*pebbleConfig, func ()) {
 			target.PebbleServerConfig.PerPage = DefaultPerPage
 		}
 
+		if target.PebbleServerConfig.CertificateAlternateChains == 0 {
+			target.PebbleServerConfig.CertificateAlternateChains = DefaultCertificateAlternateChains
+		}
+		if target.PebbleServerConfig.CertificateChainLength == 0 {
+			target.PebbleServerConfig.CertificateChainLength = DefaultCertificateChainLength
+		}
+
 		if target.PebbleDB == nil {
 			target.PebbleDB = db.NewMemoryStore()
 		}
@@ -120,7 +128,12 @@ func newPebbleConfig(t testingT) (*pebbleConfig, func ()) {
 		}
 
 		if target.PebbleWFE == nil {
-			frontend := wfe.New(target.PebbleLogger, target.PebbleDB, target.PebbleVA, target.PebbleCA,
+			// NOTE: this re-seeds via `rand.Seed`
+			frontend := wfe.New(
+				target.PebbleLogger,
+				target.PebbleDB,
+				target.PebbleVA,
+				target.PebbleCA,
 				!target.PebbleServerConfig.PermitInsecureGET, // strict
 				target.PebbleServerConfig.RequireExternalAccountBinding) // strict EAB
 			target.PebbleWFE = &frontend
@@ -144,11 +157,19 @@ func WithPebbleServerConfig(c PebbleServerConfig) PebbleOption {
 	}
 }
 
+func WithPebbleLogger(logger *log.Logger) PebbleOption {
+	return func(pc *pebbleConfig) error {
+		pc.PebbleLogger = logger
+		return nil
+	}
+}
+
 type PebbleOption = func(*pebbleConfig) error
 
 type Pebble struct {
-	shutdown func()
+	pebbleConfig
 
+	shutdown func()
 	listener net.Listener
 	managementListener net.Listener
 }
@@ -166,7 +187,14 @@ func NewPebble(t testingT, options ...PebbleOption) Pebble {
 
 	testacmeCtx, cancel := context.WithCancel(config.Context)
 
-	listener, err := config.Listen(testacmeCtx, "unix", "")
+	listener, err := config.ListenConfig.Listen(testacmeCtx, "unix", "")
+	if err != nil {
+		// if you're here because tests are panicking, can you create an issue
+		// and share the details of the panic & desired outcome? Thanks! And,
+		// Sorry!
+		panic(fmt.Sprintf("unable to listen on unix socket: %s", err))
+	}
+	managementListener, err := config.ListenConfig.Listen(testacmeCtx, "unix", "")
 	if err != nil {
 		// if you're here because tests are panicking, can you create an issue
 		// and share the details of the panic & desired outcome? Thanks! And,
@@ -174,18 +202,77 @@ func NewPebble(t testingT, options ...PebbleOption) Pebble {
 		panic(fmt.Sprintf("unable to listen on unix socket: %s", err))
 	}
 
-	return Pebble{
+	pebble := &Pebble{
 		shutdown: cancel,
+
 		listener: listener,
+		managementListener: managementListener,
 	}
+
+	if err := runPebble(testacmeCtx, pebble); err != nil {
+		panic(fmt.Sprintf("unable to start testacme: %v", err))
+	}
+
+	return *pebble
 }
 
-func runPebble(ctx context.Context, listener net.Listener, managementListener net.Listener) error {
+func runPebble(ctx context.Context, pebble *Pebble) error {
+	{
+		handler := pebble.PebbleWFE.Handler()
+		acmeServer := &http.Server{
+			Handler: handler,
+			ErrorLog: pebble.PebbleLogger,
+			BaseContext: func(net.Listener) context.Context {
+				return ctx
+			},
+		}
+		go acmeServer.Serve(pebble.listener)
+		go func() {
+			<-ctx.Done()
+			// 5 seconds to wrap up.. starting now.
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+			defer cancel()
+			acmeServer.Shutdown(ctx)
+		}()
+	}
 
+	// {
+	// 	managementServer := &http.Server{
+	// 		Handler: pebble.PebbleWFE.ManagementHandler(),
+	// 		ErrorLog: pebble.PebbleLogger,
+	// 		BaseContext: func(net.Listener) context.Context {
+	// 			return ctx
+	// 		},
+	// 	}
+	// 	go managementServer.Serve(pebble.managementListener)
+	// 	go func() {
+	// 		<-ctx.Done()
+	// 		// 5 seconds to wrap up.. starting now.
+	// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+	// 		defer cancel()
+	// 		managementServer.Shutdown(ctx)
+	// 	}()
+	// }
+
+	return nil
 }
 
 func (p Pebble) Addr() net.Addr {
 	return p.listener.Addr()
+}
+
+func (p Pebble) ClientTransport() *http.Transport {
+	addr := p.Addr()
+	var dialer net.Dialer
+
+	return &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return dialer.DialContext(ctx, addr.Network(), addr.String())
+		},
+		DialTLSContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return dialer.DialContext(ctx, addr.Network(), addr.String())
+		},
+	}
 }
 
 func (p Pebble) ManagementAddr() net.Addr {
