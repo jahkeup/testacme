@@ -11,6 +11,17 @@ import (
 	"github.com/miekg/dns"
 )
 
+const (
+	// TLDRFC6761 is the TLDRFC6761 designated TLD name reserved specifically
+	// for testing usages.
+	//
+	// https://www.rfc-editor.org/rfc/rfc6761#section-6.2
+	TLDRFC6761 = "test"
+	// TestTLD is a top level domain name suitable for testing contexts. This
+	// symbol exists entirely for convenience.
+	TestTLD = TLDRFC6761
+)
+
 // DNS is a nameserver offering only limited capabilities. The server is
 // intended for use in testacme where most (or all) queries are expected to
 // resolve to the local host. The backing NameserverDB is the "authority" and can

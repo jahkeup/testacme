@@ -15,7 +15,7 @@ import (
 	"github.com/go-acme/lego/v4/registration"
 )
 
-var GeneratedEmailDomain = "testacme.example.org"
+var GeneratedEmailDomain = "testacme." + TLDRFC6761
 
 // Porter describes the methods provided to lookup the ports used in
 // verification.

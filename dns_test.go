@@ -28,7 +28,7 @@ func TestDNS(t *testing.T) {
 	err = conn.WriteMsg(&dns.Msg{
 		Question: []dns.Question{
 			{
-				Name:   "can.literally.be.anything.",
+				Name:   "can.literally.be.anything.test.",
 				Qtype:  dns.TypeA,
 				Qclass: dns.ClassINET,
 			},
@@ -67,7 +67,7 @@ func TestSharedDNS(t *testing.T) {
 	err = conn.WriteMsg(&dns.Msg{
 		Question: []dns.Question{
 			{
-				Name:   "can.literally.be.anything.",
+				Name:   "can.literally.be.anything.test.",
 				Qtype:  dns.TypeA,
 				Qclass: dns.ClassINET,
 			},

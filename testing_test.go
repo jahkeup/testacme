@@ -9,17 +9,17 @@ import (
 )
 
 func TestTestNamedEmail(t *testing.T) {
-	const expected = "testtestnamedemail@testacme.example.org"
+	const expected = "testtestnamedemail@testacme.test"
 	actual := TestNamedEmail(t)
 	assert.Equal(t, expected, actual)
 
 	t.Run("nested", func(t *testing.T) {
-		const expected = "testtestnamedemail_nested@testacme.example.org"
+		const expected = "testtestnamedemail_nested@testacme.test"
 		actual := TestNamedEmail(t)
 		assert.Equal(t, expected, actual)
 
 		t.Run("nested", func(t *testing.T) {
-			const expected = "testtestnamedemail_nested_nested@testacme.example.org"
+			const expected = "testtestnamedemail_nested_nested@testacme.test"
 			actual := TestNamedEmail(t)
 			assert.Equal(t, expected, actual)
 		})
