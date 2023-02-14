@@ -13,6 +13,11 @@ var (
 	sharedPebble     *Pebble
 )
 
+// SharedPebble provides a shared instance of the Pebble ACME server, suitable
+// for concurrent use. Note that some test cases & implementations may want (and
+// should!) create a new instance for each test. However, the SharedPebble
+// instance should be preferred to reduce the computational load on the system
+// during tests as cryptographic materials are generated on the fly.
 func SharedPebble() Pebble {
 	sharedPebbleOnce.Do(func() {
 		pebble := NewPebble(context.Background())
@@ -31,12 +36,13 @@ func SharedPebble() Pebble {
 }
 
 var (
-	sharedDNSOnce             sync.Once
-	sharedDNS                 *DNS
 	sharedDNSNameserverDBOnce sync.Once
 	sharedDNSNameserverDB     *NameserverDB
 )
 
+// SharedNameserverDB provides a shared instance of the NameserverDB used to
+// respond to DNS queries. This instance is used when calling SharedDNS -
+// callers may add additional responses using the provided methods.
 func SharedNameserverDB() *NameserverDB {
 	sharedDNSNameserverDBOnce.Do(func() {
 		db := new(NameserverDB)
@@ -45,6 +51,13 @@ func SharedNameserverDB() *NameserverDB {
 	return sharedDNSNameserverDB
 }
 
+var (
+	sharedDNSOnce             sync.Once
+	sharedDNS                 *DNS
+)
+
+// SharedDNS provides a shared instance of the helper DNS server, suitable for
+// concurrent use.
 func SharedDNS() *DNS {
 	sharedDNSOnce.Do(func() {
 		ns, err := NewDNS(context.Background(), SharedNameserverDB())
