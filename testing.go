@@ -15,7 +15,7 @@ import (
 	"github.com/go-acme/lego/v4/registration"
 )
 
-var GeneratedEmailDomain = "testacme." + TLDRFC6761
+var GeneratedEmailDomain = "testacme." + TestTLD
 
 // NewTestingContext creates a context that's canceled at the end of the current
 // test scope.

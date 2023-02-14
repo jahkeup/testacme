@@ -9,17 +9,14 @@ import (
 	"sync"
 
 	"github.com/miekg/dns"
+
+	"github.com/jahkeup/testacme/pkg/rfc6761"
 )
 
 const (
-	// TLDRFC6761 is the TLDRFC6761 designated TLD name reserved specifically
-	// for testing usages.
-	//
-	// https://www.rfc-editor.org/rfc/rfc6761#section-6.2
-	TLDRFC6761 = "test"
 	// TestTLD is a top level domain name suitable for testing contexts. This
 	// symbol exists entirely for convenience.
-	TestTLD = TLDRFC6761
+	TestTLD = rfc6761.TestTLD
 )
 
 // DNS is a nameserver offering only limited capabilities. The server is
