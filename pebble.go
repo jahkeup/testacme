@@ -18,10 +18,6 @@ import (
 	"github.com/letsencrypt/pebble/v2/wfe"
 )
 
-type testingT interface {
-	Cleanup(func())
-}
-
 // PebbleServerConfig provides configuration used to stand up the Pebble
 // testacme instance. Note that callers *can* make an inconsistent setup by
 // explicitly building up their CA, VA, and DB values.. so take care when being
