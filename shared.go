@@ -52,8 +52,8 @@ func SharedNameserverDB() *NameserverDB {
 }
 
 var (
-	sharedDNSOnce             sync.Once
-	sharedDNS                 *DNS
+	sharedDNSOnce sync.Once
+	sharedDNS     *DNS
 )
 
 // SharedDNS provides a shared instance of the helper DNS server, suitable for

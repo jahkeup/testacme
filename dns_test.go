@@ -98,20 +98,20 @@ func TestSharedDNS_NameserverDB(t *testing.T) {
 	t.Logf("starting dns server: %#v (%[1]q)", srv.Addr())
 
 	db := SharedNameserverDB()
-	db.AddMsg(dns.Msg{
+	db.StoreExact(dns.Msg{
 		Question: []dns.Question{
 			{
-				Name:   "this.exact.name.specifically.test.",
-				Qtype:  dns.TypeTXT,
+				Name:  "this.exact.name.specifically.test.",
+				Qtype: dns.TypeTXT,
 			},
 		},
-		Answer:   []dns.RR{
+		Answer: []dns.RR{
 			&dns.TXT{
 				Hdr: dns.RR_Header{
-					Name:     "this.exact.name.specifically.text.",
-					Rrtype:   dns.TypeTXT,
-					Class:    dns.ClassINET,
-					Ttl:      1955,
+					Name:   "this.exact.name.specifically.text.",
+					Rrtype: dns.TypeTXT,
+					Class:  dns.ClassINET,
+					Ttl:    1955,
 				},
 				Txt: []string{"foo=bar", "baz=qux"},
 			},
@@ -127,8 +127,8 @@ func TestSharedDNS_NameserverDB(t *testing.T) {
 	err = conn.WriteMsg(&dns.Msg{
 		Question: []dns.Question{
 			{
-				Name:   "this.exact.name.specifically.test.",
-				Qtype:  dns.TypeTXT,
+				Name:  "this.exact.name.specifically.test.",
+				Qtype: dns.TypeTXT,
 			},
 		},
 	})
