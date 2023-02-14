@@ -6,11 +6,14 @@ import (
 	"context"
 	"crypto"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
 	acmeapi "github.com/go-acme/lego/v4/acme/api"
 	"github.com/go-acme/lego/v4/certcrypto"
+	"github.com/go-acme/lego/v4/challenge/http01"
+	"github.com/go-acme/lego/v4/challenge/tlsalpn01"
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/registration"
 )
@@ -54,6 +57,11 @@ func LegoClient(testacme TestACME, user registration.User) *lego.Client {
 	if err != nil {
 		panic(fmt.Sprintf("failed to get lego client: %v", err))
 	}
+
+	client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("",
+		strconv.Itoa(testacme.TLSVerificationPort())))
+	client.Challenge.SetHTTP01Provider(http01.NewProviderServer("",
+		strconv.Itoa(testacme.HTTPVerificationPort())))
 
 	return client
 }
