@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"sync"
 
 	"github.com/miekg/dns"
@@ -71,23 +72,19 @@ func dbMsgKey(m *dns.Msg) string {
 		panic("cannot store multi-question messages")
 	}
 	q := m.Question[0]
-	return q.String()
+	key := fmt.Sprintf("%s-%s", q.Name, dns.TypeToString[q.Qtype])
+	fmt.Fprintln(os.Stderr, key)
+	return key
 }
 
-// DefaultA builds an adjusted response with respect to the query.
-func (db *NameserverDB) DefaultA(q dns.Question) *dns.Msg {
-	r := db.defaultA.Copy()
-
-	for i := range r.Answer {
-		r.Answer[i].Header().Name = q.Name
-	}
-
-	return r
+// DefaultA is the message prototype for a default response.
+func (db *NameserverDB) DefaultA() *dns.Msg {
+	return &db.defaultA
 }
 
 // AddMsg stores the given DNS message for lookup when resolving names.
 func (db *NameserverDB) AddMsg(r dns.Msg) {
-	db.m.Store(dbMsgKey(&r), r.Copy())
+	db.m.Store(dbMsgKey(&r), r)
 }
 
 // DeleteMsg immediately removes the given DNS message (by its question) and
@@ -103,9 +100,9 @@ func (db *NameserverDB) GetMsg(r *dns.Msg) *dns.Msg {
 		return nil
 	}
 
-	mp, ok := val.(*dns.Msg)
+	mp, ok := val.(dns.Msg)
 	if ok {
-		return mp.Copy()
+		return &mp
 	} else {
 		panic("nameserver db returned non-msg item")
 	}
@@ -113,8 +110,14 @@ func (db *NameserverDB) GetMsg(r *dns.Msg) *dns.Msg {
 
 // ServeDNS provides the DNS replies for local ACME validation.
 func (db *NameserverDB) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
-	dbresponse := db.GetMsg(r)
-	if dbresponse != nil {
+	match := db.GetMsg(r)
+	if match != nil {
+		dbresponse := new(dns.Msg)
+		dbresponse.SetReply(r)
+		dbresponse.Answer = match.Answer
+
+		fmt.Fprintf(os.Stderr, "%#v\n", dbresponse)
+
 		w.WriteMsg(dbresponse)
 		return
 	}
@@ -122,15 +125,17 @@ func (db *NameserverDB) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	var response *dns.Msg
 	for _, q := range r.Question {
 		if q.Qtype == dns.TypeA {
-			a := db.DefaultA(q)
-			response = r.Copy()
-			response.Answer = a.Answer
+			response = new(dns.Msg)
+			response.Answer = db.DefaultA().Answer
+			for i := range response.Answer {
+				response.Answer[i].Header().Name = q.Name
+			}
 		}
 
 		// TODO: support when resolving localhost addresses at runtime
 		if q.Qtype == dns.TypeAAAA {
-			response = r.Copy()
-			response.Rcode = dns.RcodeNameError
+			response = new(dns.Msg)
+			response.SetRcode(r, dns.RcodeNameError)
 		}
 
 		if response != nil {
@@ -142,7 +147,6 @@ func (db *NameserverDB) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		w.WriteMsg(response)
 	} else {
 		dns.DefaultServeMux.ServeDNS(w, r)
-		return
 	}
 }
 
