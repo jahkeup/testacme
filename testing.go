@@ -17,13 +17,6 @@ import (
 
 var GeneratedEmailDomain = "testacme." + TLDRFC6761
 
-// Porter describes the methods provided to lookup the ports used in
-// verification.
-type Porter interface {
-	HTTPVerificationPort() int
-	TLSVerificationPort() int
-}
-
 // NewTestingContext creates a context that's canceled at the end of the current
 // test scope.
 func NewTestingContext(t testing.TB) context.Context {
