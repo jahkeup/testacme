@@ -33,7 +33,7 @@ func TestACMEFlow(t *testing.T) {
 - https://github.com/letsencrypt/pebble
 
   Minimal ACME implementation - intended for testing use *only*.
-  Note: environment variable tuning of Pebble is *not* supported though is not prevented.
+  Note: environment variable tuning of Pebble is *not* supported and conflicting variables are unset.
 
 - https://github.com/letsencrypt/boulder
 

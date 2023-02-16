@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"time"
 
@@ -17,6 +18,27 @@ import (
 	"github.com/letsencrypt/pebble/v2/va"
 	"github.com/letsencrypt/pebble/v2/wfe"
 )
+
+func init() {
+	// default to *not* sleeping on the VA challenges to keep tests speeding
+	// along :)
+	//
+	// https://github.com/letsencrypt/pebble/blob/d5fa73840ef4a2efa7870648ae174627ef001e9c/va/va.go#L49
+	const noSleepEnv = "PEBBLE_VA_NOSLEEP"
+	if _, isset := os.LookupEnv(noSleepEnv); !isset {
+		os.Setenv(noSleepEnv, "true")
+	}
+}
+
+func init() { unsetPebbleEnvs() }
+
+func unsetPebbleEnvs() {
+	// Unfortunately, Pebble uses the environment variables over the values
+	// given to `ca.New`. The following should be explicitly removed from the
+	// environment to ensure values passed in are actually used.
+	os.Unsetenv("PEBBLE_ALTERNATE_ROOTS")
+	os.Unsetenv("PEBBLE_CHAIN_LENGTH")
+}
 
 // PebbleServerConfig provides configuration used to stand up the Pebble
 // testacme instance. Note that callers *can* make an inconsistent setup by
