@@ -77,7 +77,7 @@ var listenConfig net.ListenConfig
 
 func freeListenPort(ctx context.Context) (Port, error) {
 	const network = "udp" // use UDP for its smaller socket overhead
-	l, err := listenConfig.ListenPacket(context.Background(), network, "0:0")
+	l, err := listenConfig.ListenPacket(context.Background(), network, ":0")
 	if err != nil {
 		return 0, err
 	}
