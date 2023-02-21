@@ -17,6 +17,8 @@ import (
 	"github.com/letsencrypt/pebble/v2/db"
 	"github.com/letsencrypt/pebble/v2/va"
 	"github.com/letsencrypt/pebble/v2/wfe"
+
+	"github.com/jahkeup/testacme/pkg/randomports"
 )
 
 func init() {
@@ -79,10 +81,6 @@ type PebbleServerConfig struct {
 const (
 	// DefaultListPageSize is the default value used for Pebble.
 	DefaultListPageSize = 3
-	// DefaultHTTPVerificationPort is the default HTTP port used by Pebble.
-	DefaultHTTPVerificationPort = 5080
-	// DefaultTLSVerificationPort is the default TLS port used by Pebble.
-	DefaultTLSVerificationPort = 5443
 	// DefautCertificateValidityPeriod is the default value used when issuing
 	// certificates.
 	DefautCertificateValidityPeriod = 5*365*24*time.Hour + 24*time.Hour // poor approximation of 5 years.
@@ -122,9 +120,6 @@ func newPebbleConfig(ctx context.Context) (*pebbleConfig, func()) {
 		PebbleServerConfig: PebbleServerConfig{
 			ListPageSize: DefaultListPageSize,
 
-			TLSVerificationPort:  DefaultTLSVerificationPort,
-			HTTPVerificationPort: DefaultHTTPVerificationPort,
-
 			CertificateValidityPeriod:  DefautCertificateValidityPeriod,
 			CertificateAlternateChains: DefaultCertificateAlternateChains,
 			CertificateChainLength:     DefaultCertificateChainLength,
@@ -133,6 +128,23 @@ func newPebbleConfig(ctx context.Context) (*pebbleConfig, func()) {
 
 	finalize := func() {
 		target.Context = ctx
+
+		// sorry, no low ports. testing, remember?
+		if target.PebbleServerConfig.HTTPVerificationPort < 1024 {
+			port, err := randomports.One()
+			if err != nil {
+				panic(fmt.Sprintf("cannot get random port: %v", err))
+			}
+			target.PebbleServerConfig.HTTPVerificationPort = port.Int()
+		}
+		// sorry, no low ports. testing, remember?
+		if target.PebbleServerConfig.TLSVerificationPort < 1024 {
+			port, err := randomports.One()
+			if err != nil {
+				panic(fmt.Sprintf("cannot get random port: %v", err))
+			}
+			target.PebbleServerConfig.TLSVerificationPort = port.Int()
+		}
 
 		if target.PebbleLogger == nil {
 			// If you want logs, then you're going to have to configure a
@@ -217,23 +229,6 @@ func WithPebbleHTTPVerificationPort(port uint16) PebbleOption {
 func WithPebbleTLSVerificationPort(port uint16) PebbleOption {
 	return func(pc *pebbleConfig) error {
 		pc.PebbleServerConfig.TLSVerificationPort = int(port)
-		return nil
-	}
-}
-
-// WithPebbleRandomPorts generates & sets random port numbers for parallel
-// testing using distinct endpoints (allowing listeners on non-overlapping
-// ports). Note: you may not want this if you are doing TLS-ALPN-01 as the TLS
-// Client Hello should have ServerName which is great for routing purposes.
-func WithPebbleRandomPorts() PebbleOption {
-	return func(pc *pebbleConfig) error {
-		// TODO: rand :)
-		tlsPort := 12223
-		httpPort := 12224
-
-		pc.PebbleServerConfig.HTTPVerificationPort = httpPort
-		pc.PebbleServerConfig.TLSVerificationPort = tlsPort
-
 		return nil
 	}
 }

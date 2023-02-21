@@ -58,6 +58,7 @@ func TestSharedPebble_TLSALPN01(t *testing.T) {
 
 	port := pebble.TLSVerificationPort()
 	t.Logf("tls verification port: %d", port)
+	assert.True(t, port > 1024, "expect to have been told to use a high port")
 	provider := tlsalpn01.NewProviderServer("", fmt.Sprintf("%d", port))
 	t.Logf("provider: %#v", provider)
 	client.Challenge.SetTLSALPN01Provider(provider)
