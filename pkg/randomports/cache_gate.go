@@ -10,6 +10,10 @@ const (
 	// maxCachedPorts is the number of tracked ports after having been vended to
 	// avoid handing out ports that were recently vended (ie: maybe not bound
 	// yet, but will be!).
+	//
+	// Callers are expected to actually use the ports, so we expect the system
+	// to not give back occupied ports. In other words, there's little concern
+	// in the long tail of their lifetimes so no need to cache *too* many ports.
 	maxCachedPorts = 64
 )
 
@@ -23,6 +27,12 @@ func init() {
 		panic("cannot initialize port cache: " + err.Error())
 	}
 	vendedPorts = g
+}
+
+// Reserve puts the port into a shared cache. When the port exist, false is
+// returned (as in it could not reserve the port for you to vend).
+func Reserve(p Port) bool {
+	return !vendedPorts.InUse(p)
 }
 
 type cacheGate struct {

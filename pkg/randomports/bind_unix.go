@@ -22,10 +22,28 @@ const (
 	bindSocketOverhead = 100 * time.Millisecond
 )
 
-// Random returns a list of port numbers that are safe-to-assume to be free. An
+// One provides a single port. For convenience.
+func One() (Port, error) {
+	if ps, err := RandomPorts(1); err == nil {
+		return ps[0], nil
+	} else {
+		return 0, err
+	}
+}
+
+// Two provides a set of ports. For convenience.
+func Two() (Port, Port, error) {
+	if ps, err := RandomPorts(2); err == nil {
+		return ps[0], ps[1], nil
+	} else {
+		return 0, 0, err
+	}
+}
+
+// RandomPorts returns a list of port numbers that are safe-to-assume to be free. An
 // internal list is used track vended ports to avoid concurrent users from
 // seeing conflicting ports.
-func Random(n int) ([]Port, error) {
+func RandomPorts(n int) ([]Port, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(n)*bindSocketOverhead)
 	ports, err := randomWithContext(ctx, n)
 	cancel()
@@ -57,13 +75,13 @@ ports:
 				continue
 			}
 
-			if vendedPorts.InUse(p) {
+			if Reserve(p) {
+				ports[i] = p
+				continue ports
+			} else {
 				// don't count this against the attempts, because our cache
 				// filtered it out.
 				goto bind
-			} else {
-				ports[i] = p
-				continue ports
 			}
 		}
 

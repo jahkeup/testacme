@@ -9,6 +9,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestReserve(t *testing.T) {
+	const iters = maxCachedPorts * 2
+	const sentinel = maxCachedPorts - 1
+
+	for i := Port(0); i < iters; i++ {
+		if i < maxCachedPorts {
+			assert.True(t, Reserve(i))
+		} else {
+			assert.False(t, Reserve(i-maxCachedPorts))
+		}
+	}
+
+	assert.False(t, Reserve(sentinel))
+}
+
 func TestCacheGate(t *testing.T) {
 	cg, err := newCacheGate(5)
 	require.NoError(t, err)

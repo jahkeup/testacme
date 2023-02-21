@@ -17,11 +17,11 @@ func TestRandom(t *testing.T) {
 
 		for _, n := range success {
 			t.Run(fmt.Sprintf("random_%d", n), func(t *testing.T) {
-				ports, err := Random(n)
+				ports, err := RandomPorts(n)
 				assert.NoError(t, err)
 				if assert.NotEmpty(t, ports) {
 					for _, p := range ports {
-						assert.True(t, vendedPorts.InUse(p), "should be in vended ports")
+						assert.False(t, Reserve(p), "should not be available for reservation")
 					}
 				}
 			})
