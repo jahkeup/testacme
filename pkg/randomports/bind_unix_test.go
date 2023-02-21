@@ -28,3 +28,8 @@ func TestRandom(t *testing.T) {
 		}
 	})
 }
+
+func TestLoopbackCheck(t *testing.T) {
+	t.Log(loopbackAddresses())
+	assert.NotEqual(t, ":0", bindAddress)
+}

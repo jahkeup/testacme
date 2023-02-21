@@ -22,6 +22,45 @@ const (
 	bindSocketOverhead = 100 * time.Millisecond
 )
 
+var (
+	bindAddress = ":0"
+)
+
+func init() {
+	los, err := loopbackAddresses()
+	if err == nil && len(los) > 0 {
+		bindAddress = fmt.Sprintf("%s:0", los[0].String())
+	}
+}
+
+func loopbackAddresses() ([]net.IP, error) {
+	ifs, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	addrs := []net.IP{}
+	for _, iface := range ifs {
+		if iface.Flags&net.FlagLoopback != net.FlagLoopback {
+			continue
+		}
+		ifaddrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, ifaddr := range ifaddrs {
+			switch v := ifaddr.(type) {
+			case *net.IPNet:
+				if v.IP.IsLoopback() {
+					addrs = append(addrs, v.IP)
+				}
+			}
+		}
+	}
+
+	return addrs, nil
+}
+
 // One provides a single port. For convenience.
 func One() (Port, error) {
 	if ps, err := RandomPorts(1); err == nil {
@@ -95,7 +134,7 @@ var listenConfig net.ListenConfig
 
 func freeListenPort(ctx context.Context) (Port, error) {
 	const network = "udp" // use UDP for its smaller socket overhead
-	l, err := listenConfig.ListenPacket(context.Background(), network, ":0")
+	l, err := listenConfig.ListenPacket(context.Background(), network, bindAddress)
 	if err != nil {
 		return 0, err
 	}
