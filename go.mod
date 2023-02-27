@@ -3,7 +3,7 @@ module github.com/jahkeup/testacme
 go 1.19
 
 require (
-	github.com/go-acme/lego/v4 v4.10.0
+	github.com/go-acme/lego/v4 v4.10.2
 	github.com/hashicorp/golang-lru/v2 v2.0.1
 	github.com/letsencrypt/pebble/v2 v2.4.0
 	github.com/miekg/dns v1.1.50
