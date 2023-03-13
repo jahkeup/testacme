@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/go-acme/lego/v4 v4.10.0
-	github.com/hashicorp/golang-lru/v2 v2.0.1
+	github.com/hashicorp/golang-lru/v2 v2.0.2
 	github.com/letsencrypt/pebble/v2 v2.4.0
 	github.com/miekg/dns v1.1.50
 	github.com/stretchr/testify v1.8.1
