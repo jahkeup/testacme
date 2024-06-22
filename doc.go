@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0-or-later
+// SPDX-License-Identifier: MIT OR LGPL-3.0-or-later
 
 // Package testacme provides a testing focused helper library which enables test
 // authors to execute ACME integration and functional tests. The ACME server

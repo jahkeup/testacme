@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0-or-later
+// SPDX-License-Identifier: MIT OR LGPL-3.0-or-later
 
 package rfc6761
 
